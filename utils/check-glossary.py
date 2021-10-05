@@ -21,8 +21,8 @@ Checks always performed:
 Checks performed 
 '''
 
+import argparse
 import sys
-import getopt
 import re
 import yaml
 from collections import Counter
@@ -75,28 +75,25 @@ def parseArgs():
     to check may be 'ALL' (to check all), None (to check none), or
     a known 2-letter language code.
     '''
-    try:
-        options, filenames = getopt.getopt(sys.argv[1:], 'Ac:')
-    except getopt.GetoptError as error:
-        print(f'Unknown flag {error.opt}', file=sys.stderr)
-        sys.exit(1)
-
-    if (len(filenames) != 2):
-        print(f'Usage: check [-A] [-c LL] configFile glossFile')
-        sys.exit(1)
-    configFile, glossFile = filenames
+    parser = argparse.ArgumentParser()
+    parser.add_argument('configFile', help='Configuration file')
+    parser.add_argument('glossFile', help='Glossary file')
+    parser.add_argument('-A', action='store_true', dest='check_all',
+                        help='Check all languages')
+    parser.add_argument('-c', dest='lang', metavar='LL',
+                        help='Check the language with the given code')
+    args = parser.parse_args()
 
     checkLang = None
-    for (opt, arg) in options:
-        if opt == '-A':
-            checkLang = 'ALL'
-        elif opt == '-c':
-            checkLang = arg
-            if checkLang not in ENTRY_LANGUAGE_KEYS:
-                print(f'Unknown language {checkLang}', file=sys.stderr)
-                sys.exit(1)
+    if args.check_all:
+        checkLang = 'ALL'
+    elif args.lang:
+        checkLang = args.lang
+        if checkLang not in ENTRY_LANGUAGE_KEYS:
+            print(f'Unknown language {checkLang}', file=sys.stderr)
+            sys.exit(1)
 
-    return checkLang, configFile, glossFile
+    return checkLang, args.configFile, args.glossFile
 
 
 def checkLanguages(config):
